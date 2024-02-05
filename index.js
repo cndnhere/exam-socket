@@ -2,23 +2,32 @@
 const app = require('express')();
 const httpServer = require('http').createServer(app);
 const io = require('socket.io')(httpServer, {
-  cors: {origin : '*'}
+  cors: { origin: '*' }
 });
-let userAns=[];
+let userAns = [];
 const port = process.env.PORT || 3000;
 
 io.on('connection', (socket) => {
-  
-  console.log('a user connected');
+  // Listen for a custom event "privateMessage"
+  socket.on('privateMessage', (data) => {
+    console.log(data);
+    // console.log(`Received private message from ${data.userId}: ${data.message} : ${data.distance}`);
 
-  socket.on('message', (message) => {
-    io.emit('message', message);
-  }); 
- 
-  
+    // Get the socket ID of the recipient user
+    const recipientSocketId = data.socketId;
+    console.log(recipientSocketId);
 
+    // Send the private message to the specific socket ID
+    io.to(data.socketId).emit('privateMessage', {
+      senderSocketId: data.socketId,
+      message: data.message,
+      distance: data.distance
+    });
+  });
+
+  // Disconnect event
   socket.on('disconnect', () => {
-    console.log('a user disconnected!');
+    console.log('User disconnected: ' + socket.id);
   });
 });
 
